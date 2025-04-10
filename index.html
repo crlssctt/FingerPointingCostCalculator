@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Meeting Cost Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom style for cost highlight */
+        @keyframes highlight {
+            0% { background-color: transparent; }
+            50% { background-color: #fef9c3; } /* Light yellow highlight */
+            100% { background-color: transparent; }
+        }
+        .highlight-cost {
+            animation: highlight 1s ease-out;
+        }
+        /* Ensure number input arrows are always visible */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            opacity: 1;
+        }
+        /* Consistent appearance for select dropdown */
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22none%22%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem; /* Make space for arrow */
+        }
+        /* Add transition for title size change */
+        #mainTitle {
+            transition: font-size 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans py-10">
+
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
+        <h1 id="mainTitle" class="text-2xl font-bold text-center text-gray-800 mb-2">IT Meeting Cost Calculator</h1>
+        <p class="text-sm text-gray-600 text-center mb-6">Estimate the cost based on the IT roles attending.</p>
+
+        <div class="mb-4"> <label for="duration" class="block text-sm font-medium text-gray-700 mb-1">Meeting Duration:</label>
+            <select id="duration" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="60" selected>60 minutes (1 hour)</option>
+                <option value="75">75 minutes</option>
+                <option value="90">90 minutes (1.5 hours)</option>
+                <option value="105">105 minutes</option>
+                <option value="120">120 minutes (2 hours)</option>
+                <option value="135">135 minutes</option>
+                <option value="150">150 minutes (2.5 hours)</option>
+                <option value="165">165 minutes</option>
+                <option value="180">180 minutes (3 hours)</option>
+                <option value="195">195 minutes</option>
+                <option value="210">210 minutes (3.5 hours)</option>
+                <option value="225">225 minutes</option>
+                <option value="240">240 minutes (4 hours)</option>
+            </select>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Was the desired outcome clearly defined beforehand?</label>
+            <div class="flex items-center space-x-4 mt-1">
+                <div class="flex items-center">
+                    <input id="outcomeYes" name="outcomeDefined" type="radio" value="yes" checked class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                    <label for="outcomeYes" class="ml-2 block text-sm text-gray-900">Yes</label>
+                </div>
+                <div class="flex items-center">
+                    <input id="outcomeNo" name="outcomeDefined" type="radio" value="no" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                    <label for="outcomeNo" class="ml-2 block text-sm text-gray-900">No (Doubles effective duration)</label>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-700 mb-3">Attendees by Role:</h2>
+                <div id="rolesContainer" class="space-y-3 max-h-72 overflow-y-auto pr-2 mb-6 md:mb-0">
+                    </div>
+            </div>
+
+            <div>
+                <button id="calculateBtn" type="button" class="mb-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    Calculate Cost
+                </button>
+
+                <div class="text-center bg-gray-50 p-4 rounded-lg space-y-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-800">Estimated Meeting Cost:</h2>
+                        <p id="totalCost" class="text-3xl font-bold text-red-600 my-1">$0.00</p>
+                        <p class="text-sm text-gray-600">Total Attendees: <span id="totalAttendees" class="font-medium">0</span></p>
+                        <p id="fingerPointingMessage" class="text-sm text-gray-600 italic min-h-[20px] mt-1"></p>
+                    </div>
+
+                    <hr id="valueSeparator" class="border-gray-300 my-3" style="display: none;">
+
+                    <div id="alternativeValueDisplay" class="text-left text-sm space-y-3" style="display: none;">
+                        <div id="tongueInCheekValues">
+                            <h3 class="font-semibold text-gray-700">Instead, you could've had:</h3>
+                            <ul class="list-disc list-inside text-gray-600"></ul>
+                        </div>
+                        <div id="itRelevantValues">
+                            <h3 class="font-semibold text-gray-700">Or, in IT terms:</h3>
+                            <ul class="list-disc list-inside text-gray-600"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration: Roles ---
+        const itRoles = [
+            { id: 'swe', name: 'Software Engineer', rate: 60 },
+            { id: 'sr_swe', name: 'Senior Software Engineer', rate: 85 },
+            { id: 'qa', name: 'QA Tester', rate: 50 },
+            { id: 'devops', name: 'DevOps Engineer', rate: 90 },
+            { id: 'pm', name: 'Project Manager', rate: 80 },
+            { id: 'uiux', name: 'UI/UX Designer', rate: 70 },
+            { id: 'dba', name: 'Database Admin', rate: 85 },
+            { id: 'network', name: 'Network Engineer', rate: 75 },
+            { id: 'security', name: 'Security Analyst', rate: 95 },
+            { id: 'support', name: 'IT Support Specialist', rate: 45 }
+        ];
+
+        // --- Configuration: Alternative Value Items ---
+        const alternativeValues = {
+            tongueInCheek: [
+                { name: "cup(s) of decent coffee", cost: 4 },
+                { name: "slice(s) of pizza", cost: 3 },
+                { name: "fancy rubber duck(s)", cost: 5 },
+                { name: "month(s) of a premium streaming service", cost: 15 }
+            ],
+            itRelevant: [
+                { name: "hour(s) of basic cloud compute (e.g., t3.micro)", cost: 0.011 },
+                { name: "GB-Month(s) of cloud object storage", cost: 0.023 },
+                { name: "premium stock photo(s)", cost: 15 },
+                { name: "decent optical mouse/mice", cost: 25 },
+                { name: "basic 256GB SSD(s)", cost: 40 }
+            ]
+        };
+
+        // --- DOM References ---
+        const mainTitle = document.getElementById('mainTitle');
+        const rolesContainer = document.getElementById('rolesContainer');
+        const durationInput = document.getElementById('duration');
+        const outcomeYesRadio = document.getElementById('outcomeYes'); // New reference
+        const outcomeNoRadio = document.getElementById('outcomeNo');   // New reference
+        const calculateBtn = document.getElementById('calculateBtn');
+        const totalCostDisplay = document.getElementById('totalCost');
+        const totalAttendeesDisplay = document.getElementById('totalAttendees');
+        const messageDisplay = document.getElementById('fingerPointingMessage');
+        const alternativeValueDisplay = document.getElementById('alternativeValueDisplay');
+        const tongueInCheekList = document.querySelector('#tongueInCheekValues ul');
+        const itRelevantList = document.querySelector('#itRelevantValues ul');
+        const valueSeparator = document.getElementById('valueSeparator');
+
+
+        // --- Dynamic Role Input Creation ---
+        itRoles.forEach(role => {
+            // (Code identical to previous version)
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between space-x-2';
+            const label = document.createElement('label');
+            label.htmlFor = `count-${role.id}`;
+            label.textContent = `${role.name} ($${role.rate}/hr)`;
+            label.className = 'text-sm font-medium text-gray-700 flex-grow';
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.id = `count-${role.id}`;
+            input.min = '0';
+            input.value = '0';
+            input.dataset.rate = role.rate;
+            input.className = 'w-16 px-2 py-1 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500';
+            input.addEventListener('input', calculateMeetingCost);
+            div.appendChild(label);
+            div.appendChild(input);
+            rolesContainer.appendChild(div);
+        });
+
+        // --- Update Alternative Value Display ---
+        function updateAlternativeValueDisplay(cost) {
+            // (Code identical to previous version)
+             tongueInCheekList.innerHTML = '';
+            itRelevantList.innerHTML = '';
+            let hasTongueInCheek = false;
+            alternativeValues.tongueInCheek.forEach(item => {
+                if (cost >= item.cost) {
+                    const quantity = Math.floor(cost / item.cost);
+                    const li = document.createElement('li');
+                    li.textContent = `${quantity.toLocaleString()} ${item.name}`;
+                    tongueInCheekList.appendChild(li);
+                    hasTongueInCheek = true;
+                }
+            });
+            let hasItRelevant = false;
+            alternativeValues.itRelevant.forEach(item => {
+                 if (cost >= item.cost) {
+                    const quantity = Math.floor(cost / item.cost);
+                    const li = document.createElement('li');
+                    let displayQuantity = (item.name.includes('cloud compute') && quantity > 10000)
+                                            ? quantity.toExponential(1)
+                                            : quantity.toLocaleString();
+                    li.textContent = `${displayQuantity} ${item.name}`;
+                    itRelevantList.appendChild(li);
+                    hasItRelevant = true;
+                }
+            });
+            const showSection = hasTongueInCheek || hasItRelevant;
+            alternativeValueDisplay.style.display = showSection ? 'block' : 'none';
+            valueSeparator.style.display = showSection ? 'block' : 'none';
+            document.getElementById('tongueInCheekValues').style.display = hasTongueInCheek ? 'block' : 'none';
+            document.getElementById('itRelevantValues').style.display = hasItRelevant ? 'block' : 'none';
+        }
+
+        // --- Update Main Title Style based on Cost ---
+        function updateTitleStyle(cost) {
+            // (Code identical to previous version)
+            const baseClasses = ['font-bold', 'text-center', 'text-gray-800', 'mb-2'];
+            let sizeClass = 'text-2xl';
+            if (cost > 1500) {
+                sizeClass = 'text-4xl';
+            } else if (cost > 750) {
+                sizeClass = 'text-3xl';
+            }
+            mainTitle.className = '';
+            mainTitle.classList.add(sizeClass, ...baseClasses);
+        }
+
+
+        // --- Main Calculation Logic ---
+        function calculateMeetingCost() {
+            // Get base duration from dropdown
+            const baseDurationMinutes = parseFloat(durationInput.value);
+            let effectiveDurationMinutes = baseDurationMinutes;
+            let clarityFactorApplied = false;
+
+            // Check if outcome was defined - double duration if 'No'
+            if (outcomeNoRadio.checked) {
+                effectiveDurationMinutes = baseDurationMinutes * 2;
+                clarityFactorApplied = true;
+            }
+
+            let totalCost = 0;
+            let totalAttendees = 0;
+
+            // Validation for duration (using effective duration now)
+            if (isNaN(effectiveDurationMinutes) || effectiveDurationMinutes <= 0) {
+                totalCostDisplay.textContent = "$ Error";
+                totalAttendeesDisplay.textContent = "--";
+                messageDisplay.textContent = "Invalid duration selected.";
+                totalCostDisplay.classList.remove('highlight-cost');
+                updateAlternativeValueDisplay(0);
+                updateTitleStyle(0);
+                return;
+            }
+
+            // Calculate duration in hours using effective duration
+            const durationHours = effectiveDurationMinutes / 60;
+
+            // Iterate through roles to calculate cost and count attendees
+            itRoles.forEach(role => {
+                const inputElement = document.getElementById(`count-${role.id}`);
+                const count = parseFloat(inputElement.value);
+                const rate = parseFloat(inputElement.dataset.rate);
+
+                if (!isNaN(count) && count > 0 && !isNaN(rate)) {
+                    totalAttendees += count;
+                    totalCost += count * rate * durationHours; // Use durationHours (based on effective duration)
+                } else if (isNaN(count) || count < 0) {
+                    inputElement.value = '0'; // Reset invalid input
+                }
+            });
+
+            // --- Display Core Results ---
+            totalCostDisplay.textContent = `$${totalCost.toFixed(2)}`;
+            totalAttendeesDisplay.textContent = totalAttendees;
+
+            // Add highlight animation
+            totalCostDisplay.classList.remove('highlight-cost');
+            void totalCostDisplay.offsetWidth; // Trigger reflow
+            totalCostDisplay.classList.add('highlight-cost');
+
+             // Determine and display the "Finger Pointing" Message
+             let message = "";
+             const selectedDurationText = durationInput.options[durationInput.selectedIndex].text;
+
+             // Base message logic (similar to before)
+             if (totalCost === 0 && totalAttendees > 0) {
+                 message = "Looks like the meeting is free... or someone's salary is missing!";
+            } else if (totalCost > 1500) {
+                message = `Wow! ${totalAttendees} people for ${selectedDurationText}... Hope you solved world hunger! 🤯`;
+            } else if (totalCost > 750) {
+                message = `Significant cost for ${selectedDurationText}. Was every role (${totalAttendees} total) truly essential? 🤔`;
+            } else if (totalCost > 200) {
+                message = `Costing more than a coffee break for ${selectedDurationText}. Ensure clear objectives! 🎯`;
+            } else if (totalCost > 0) {
+                message = `Looks reasonable for ${selectedDurationText}, but keep efficiency in mind!`;
+            } else {
+                 message = "Add attendees to see the cost."; // Initial/Zero state
+            }
+
+            // Append note if cost was doubled
+            if (clarityFactorApplied && totalCost > 0) {
+                 message += " (Cost calculated using doubled duration due to undefined outcome.)";
+            }
+
+            messageDisplay.textContent = message;
+
+            // --- Update Alternative Value Display ---
+            updateAlternativeValueDisplay(totalCost);
+
+            // --- Update Title Style ---
+            updateTitleStyle(totalCost);
+        }
+
+        // --- Event Listeners ---
+        calculateBtn.addEventListener('click', calculateMeetingCost);
+        durationInput.addEventListener('change', calculateMeetingCost);
+        // Add listeners for the new radio buttons
+        outcomeYesRadio.addEventListener('change', calculateMeetingCost);
+        outcomeNoRadio.addEventListener('change', calculateMeetingCost);
+        // Role count inputs already have listeners attached during creation
+
+        // --- Initial Calculation on Load ---
+        calculateMeetingCost();
+
+    </script>
+
+</body>
+</html>
